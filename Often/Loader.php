@@ -10,8 +10,15 @@
 // +----------------------------------------------------------------------
 namespace Often;
 // 应用公共文件
-
-class Often
+/**
+ * 注册SDK自动加载机制
+ */
+spl_autoload_register(function ($class) {
+    $filename = getcwd().DIRECTORY_SEPARATOR. str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php';
+    //print_r($filename);exit;
+    file_exists($filename) && require($filename);
+});
+class Loader
 {
     /**
      * 获取客户端IP地址
