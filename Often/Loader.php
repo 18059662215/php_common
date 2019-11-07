@@ -65,7 +65,7 @@ class Loader
      * 根据客户端IP地址获取用户所在地信息
      * 利用淘宝接口根据ip查询所在区域信息
      */
-    static function getSiteInfo2()
+    static function &getSiteInfo2()
     {
         $ip = self::get_client_ip();
         //利用百度地图
@@ -76,7 +76,7 @@ class Loader
     /**
      *图片上传（files:上传图片，$path:图片路径）
      */
-    static function uploadimg($files, $path)
+    static function &uploadimg($files, $path)
     {
         $picture = $files;
         $length = count(explode(".", $picture['name']));
@@ -90,7 +90,7 @@ class Loader
     /**
      * 文件删除
      */
-    static function delFlie($str)
+    static function &delFlie($str)
     {
         $file = str_replace(getHttp(), $_SERVER['DOCUMENT_ROOT'], $str);
         if (file_exists($file)) {
@@ -105,7 +105,7 @@ class Loader
    * 5.0版本以上建议使用框架自带的获取方法
    * 按REST协议获取参数值
    */
-    static function fun($status)
+    static function &fun($status)
     {
         //获取
         if ($status === 'get') {
@@ -196,7 +196,7 @@ class Loader
      * @return float
      * 计算距离
      */
-    static function getDistance($lat1, $lng1, $lat2, $lng2)
+    static function &getDistance($lat1, $lng1, $lat2, $lng2)
     {
         $earthRadius = 6367000; //approximate radius of earth in meters
         /*
@@ -227,7 +227,7 @@ class Loader
      * @param 经纬度63723797
      * 计算几公里以内的最大最小经纬度
      */
-    static function getDs($num, $latitude, $longitude)
+    static function &getDs($num, $latitude, $longitude)
     {
         $range = 180 / pi() * $num / 6372.3797;
         $linR = $range / cos($latitude * pi() / 180);
@@ -249,7 +249,7 @@ class Loader
     /**
      * 判断是否拥有对应的参数并返回对应的json数据
      */
-    static function msg($data, $success)
+    static function &msg($data, $success)
     {
         if ($data) {
             return json(array("code" => 10001, 'msg' => $success, 'data' => $data));
@@ -265,7 +265,7 @@ class Loader
      * @param null $e （参数e）
      * 判断存在回调函数
      */
-    static function message($a, $b, $c, $d = null, $e = null, $ais = true, $dis = true, $eis = true)
+    static function &message($a, $b, $c, $d = null, $e = null, $ais = true, $dis = true, $eis = true)
     {
         if ($a) {
             if ($d) {
