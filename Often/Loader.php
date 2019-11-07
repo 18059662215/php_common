@@ -54,7 +54,7 @@ class Loader
      * 根据客户端IP地址获取用户所在地信息
      * 利用淘宝接口根据ip查询所在区域信息
      */
-    static function getSiteInfo1()
+    static function &getSiteInfo1()
     {
         $ip = self::get_client_ip();
         //利用淘宝接口根据ip查询所在区域信息
