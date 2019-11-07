@@ -1,0 +1,19 @@
+{
+    "name": "liukaiming/phpcommon",
+    "description": "php common package",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "liukaiming",
+            "email": "907635375@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ofter\\": "./Ofter/Ofter"
+        }
+    }
+}
