@@ -310,4 +310,296 @@ class Loader
             exit;
         }
     }
+    /**
+     * @param 文本编辑器上传
+     */
+    static function &upEditor($content)
+    {
+        if (!empty($content)){
+            //正则表达式匹配查找图片路径
+            $pattern = '/<[img|IMG].*?src=[\'|\"](.*?(?:[\.gif|\.jpg|\.jpeg|\.png]))[\'|\"].*?[\/]?>/i';
+            preg_match_all($pattern, $content, $res);
+            $num = count($res[1]);
+            for ($i = 0; $i < $num; $i++) {
+                //获取完整图片路径
+                $img = $res[1][$i];
+                //去除域名信息
+                $imgs=explode(self::getHttp(),$img);
+                //对剩余部分进行切割
+                $tmp_arr = explode('/', $imgs[1]);
+
+                $datefloder = '/static/temporary/images/'.$tmp_arr[4];
+                //拼接出完整的服务器路径
+                $datefloder=$_SERVER["DOCUMENT_ROOT"].$datefloder;
+                //查看临时图片目录是否存在不存在则创建(需要有父级目录权限)
+                $file_box=$_SERVER["DOCUMENT_ROOT"].'/static/temporary/images';
+                if (!is_dir($file_box)) {
+                    mkdir($file_box, 0777);
+                }
+                //查看正式图片目录是否存在不存在则创建(需要有父级目录权限)
+                $file_boxs=$_SERVER["DOCUMENT_ROOT"].'/static/formal/images';
+                if (!is_dir($file_boxs)) {
+                    mkdir($file_box, 0777);
+                }
+                $tmpimg = $datefloder;
+                $newimg = str_replace('/temporary/', '/formal/', $tmpimg);
+                //将图片从临时目录转移到正式目录
+                if (rename($tmpimg, $newimg)) {
+                    //图片转移完成，进行内容替换
+                    $content = str_replace('/temporary/', '/formal/', $content);
+                }
+            }
+            return $content;
+        }
+    }
+    /**
+     * @param 文本编辑器修改
+     */
+    static function &editEditor($content,$oldcontent){
+        //下次编辑文章内容的时候使用同样的思路，不过要先判断是否是新上传的图片，原来的就不要动了。
+        //还有一种情况是原来已经上传的图片在被编辑的时候删除了，虽然数据库修改了，但是文件还在，所以需要和原内容进行比较之后删除。
+        //转移editor文件
+        if(!empty($content))
+        {
+            //正则表达式匹配查找图片路径
+            $pattern='/<[img|IMG].*?src=[\'|\"](.*?(?:[\.gif|\.jpg|\.jpeg|\.png]))[\'|\"].*?[\/]?>/i';
+            preg_match_all($pattern,$content,$res);
+            $num=count($res[1]);
+            $imgarr=[];
+            for($i=0;$i<$num;$i++)
+            {
+                $img=$res[1][$i];
+                //判断是否是新上传的图片
+                $pos=stripos($img,"/temporary/");
+                //判断是否是原来的图片
+                $oldimg=stripos($img,"/formal/");
+                if($oldimg>0){
+                    //将所有新内容的老图片放一个数组里
+                    $imgarr[]=$img;
+                }
+
+                //判断有新传的图片时，处理新上传的图片
+                if($pos>0)
+                {
+                    //去除域名信息
+                    $imgs=explode(self::getHttp(),$img);
+
+                    $tmp_arr=explode('/',$imgs[1]);
+
+                    $datefloder='/static/temporary/images/'.$tmp_arr[4];
+                    $datefloder=$_SERVER["DOCUMENT_ROOT"].$datefloder;
+
+
+                    //查看临时图片目录是否存在不存在则创建(需要有父级目录权限)
+                    $file_box=$_SERVER["DOCUMENT_ROOT"].'/static/temporary/images';
+                    if (!is_dir($file_box)) {
+                        mkdir($file_box, 0777);
+                    }
+                    //查看正式图片目录是否存在不存在则创建(需要有父级目录权限)
+                    $file_boxs=$_SERVER["DOCUMENT_ROOT"].'/static/formal/images';
+                    if (!is_dir($file_boxs)) {
+                        mkdir($file_box, 0777);
+                    }
+                    $tmpimg = $datefloder;
+                    $newimg = str_replace('/temporary/', '/formal/', $tmpimg);
+                    //转移图片
+                    if(rename($tmpimg, $newimg))
+                    {
+                        $content=str_replace('/temporary/','/formal/',$content);
+                    }
+                }
+            }
+        }
+        //删除在编辑时被删除的原有图片
+        if(!empty($oldcontent))
+        {
+            //正则表达式匹配查找图片路径
+            $pattern='/<[img|IMG].*?src=[\'|\"](.*?(?:[\.gif|\.jpg|\.jpeg|\.png]))[\'|\"].*?[\/]?>/i';
+            preg_match_all($pattern,$oldcontent,$oldres);
+            $num=count($oldres[1]);
+            for($i=0;$i<$num;$i++)
+            {
+                $delimg=$oldres[1][$i];
+                //判断在新内容中不存在的图片进行删除
+                if(!in_array($delimg[1], $imgarr))
+                {
+                    //去除域名信息
+                    $delimg=explode(self::getHttp(),$delimg);
+                    $delimage=$_SERVER["DOCUMENT_ROOT"].$delimg[1];
+                    if(file_exists($delimage)){
+                        unlink($delimage);
+                    }
+
+                }
+            }
+        }
+        return $content;
+    }
+    //删除文本编辑器内容里的图片
+    static  function &delEditor($content){
+        //正则表达式匹配查找图片路径
+        $pattern='/<[img|IMG].*?src=[\'|\"](.*?(?:[\.gif|\.jpg|\.jpeg|\.png]))[\'|\"].*?[\/]?>/i';
+        preg_match_all($pattern,$content,$res);
+        $num=count($res[1]);
+        for($i=0;$i<$num;$i++)
+        {
+            $img=$res[1][$i];
+            //去除域名信息
+            $imgs=explode(self::getHttp(),$img);
+            $tmp_arr=explode('/',$imgs[1]);
+            $datefloder='/static/formal/images/'.$tmp_arr[4];
+            //获取图片在服务器的完整路径
+            $datefloder=$_SERVER["DOCUMENT_ROOT"].$datefloder;
+            //判断并删除图片
+            if(file_exists($datefloder)){
+                unlink($datefloder);
+            }
+        }
+        return true;
+    }
+
+     /**
+     * @desc 验证上传照片/视频的大小，类型
+     * @param  @size  文件大小
+     * @param  @type  文件类型
+     * @return  1-通过,2-错误文件类型，3-文件过大
+     **/
+    static function uploadFileValidate($type, $size)
+    {
+        $allow_type = array("image/jpg", "image/jpeg", "image/gif", "image/png", "video/mp4");
+
+        if (!in_array($type, $allow_type)) {
+            return 2;
+        }
+        if ($size > 1000000) {
+            return 3;
+        }
+        return 1;
+    }
+    /**
+     * 递归创建目录
+     * @param $dir
+     * @param int $mod
+     * @return bool
+     */
+    protected function mk_dir($dir, $mod = 0777)
+    {
+        if (is_dir($dir)) {
+            return true;
+        }
+        return is_dir(dirname($dir)) || $this->mk_dir(dirname($dir)) ? mkdir($dir, $mod) : false;
+
+    }
+
+    /**
+     * @desc  图片上传临时目录
+     * @param  @path       文件路径  入口文件所在目录/static/temporary/images 开始
+     * @param  @filename   文件名称(不带后缀)
+     * @return
+     **/
+    static function &uploadFiles()
+    {
+    //进行多图上传
+        $leg=0;
+        foreach ($_FILES as $key=>&$val){
+            $uploadConfig = '/static/temporary/images';
+            if (is_uploaded_file($val['tmp_name'])) {
+                $type = $val["type"];            //被上传文件的类型
+                $size = $val["size"];            //被上传文件的大小
+                $tep_name = $val["tmp_name"];    //存储在服务器上的临时副本
+                $typeArr = explode('/', $type);
+                $returnStatus = $this->uploadFileValidate($type, $size);
+                if ($returnStatus == 2) {
+                    throw new Exception("Error UploadFile Type");
+                } else if ($returnStatus == 3) {
+                    throw new Exception("Error UploadFile Size");
+                }
+                $file_path = $_SERVER["DOCUMENT_ROOT"].$uploadConfig;
+                if (!file_exists($file_path)) {
+                    self::mk_dir($file_path);
+                }
+                $fileName = 'Image_' . time() . rand(10000, 99999) . '.' . $typeArr[1];
+                if (move_uploaded_file($tep_name, iconv("utf-8", "gb2312", $file_path.'/'.$fileName))) {
+                    $path='/public/'.$uploadConfig."/".$fileName;
+                    $lpath=self::getHttp().'/'.'static/temporary/images'."/".$fileName;
+                    $leg+=1;
+                    $data[]=$path;
+                    $ldata[]=$lpath;
+                } else {
+                    throw new Exception("Error UploadFile");
+                }
+            } else {
+                throw new Exception("Error UploadFile NULL");
+            }
+        }
+        if(count($_FILES)==$leg){
+            return [
+                "errno"=>0,
+                "data"=>$ldata,
+                'ldata'=>$data,
+                "msg"=>"图片上传成功",
+            ];
+        }
+    }
+
+    //将图片转移到正式图片目录
+    static function &unPic($img){
+        $imgs=explode(self::getHttp(),$img);
+        $datefloder=$_SERVER["DOCUMENT_ROOT"].$imgs[1];
+        $newimg = str_replace('/temporary/', '/formal/', $datefloder);
+        //转移图片
+        if(rename($datefloder, $newimg))
+        {
+            $content=str_replace('/temporary/','/formal/',$img);
+        }
+        return $content;
+    }
+    //删除图片
+    static function &delPic($img){
+        $imgs=explode(self::getHttp(),$img);
+        $datefloder=$_SERVER["DOCUMENT_ROOT"].$imgs[1];
+        if(file_exists($img)){
+            unlink($datefloder);
+        }
+        return true;
+    }
+    //修改图片
+    static function &editPic($img,$oldimg){
+        //判断是否是新上传的图片
+        $pos=stripos($img,"/temporary/");
+        if($pos>0){
+            //转移新图片到正式目录
+            $imgs=explode(self::getHttp(),$img);
+            $datefloder=$_SERVER["DOCUMENT_ROOT"].$imgs[1];
+            $newimg = str_replace('/temporary/', '/formal/', $datefloder);
+            //转移图片
+            if(rename($datefloder, $newimg))
+            {
+                $content=str_replace('/temporary/','/formal/',$img);
+            }
+
+            //删除旧图片
+            $oldimgs=explode($this->getHttp(),$oldimg);
+            $root_path = Env::get('root_path');
+            $datefloders=$root_path.'public'.$oldimgs[1];
+            if(file_exists($datefloders)){
+                unlink($datefloders);
+            }
+            return $content;
+        }else{
+            return $img;
+        }
+    }
+    //权限获取
+    static function getAuth($array=array(1=>'添加',2=>'删除',3=>'修改',4=>'查看',5=>'启用',6=>'禁用'),$qz=18){
+        //权限管理  
+        $qx_list=[];
+        foreach ($array as $key=>$val){
+            //权限判断
+            if($key & $qz){
+                $qx_list[$key]=$val;
+            }
+        }
+        return json($qx_list);
+    }
 }
