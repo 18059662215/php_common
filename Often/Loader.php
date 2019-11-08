@@ -116,7 +116,7 @@ class Loader
                 }
             }
         }
-        if ($status == 2) {
+        if ($status == 'post') {
             if ($_SERVER['REQUEST_METHOD'] === "POST") {
                 if ($_POST) {
                     return $_POST;
@@ -128,7 +128,7 @@ class Loader
                 }
             }
         }
-        if ($status == 'post') {
+        if ($status == 'put') {
             //全部更新
             if ($_SERVER['REQUEST_METHOD'] === "PUT") {
                 $_PUT = json_decode(file_get_contents("php://input"), 1);
@@ -196,9 +196,9 @@ class Loader
      * @return float
      * 计算距离
      */
-    static function &getDistance($lat1, $lng1, $lat2, $lng2)
+    static function &getDistance($lat1, $lng1, $lat2, $lng2,$bz=6367000)
     {
-        $earthRadius = 6367000; //approximate radius of earth in meters
+        $earthRadius = $bz; //approximate radius of earth in meters
         /*
           Convert these degrees to radians
           to work with the formula
@@ -227,9 +227,9 @@ class Loader
      * @param 经纬度63723797
      * 计算几公里以内的最大最小经纬度
      */
-    static function &getDs($num, $latitude, $longitude)
+    static function &getDs($num, $latitude, $longitude,$bz=6372.3797)
     {
-        $range = 180 / pi() * $num / 6372.3797;
+        $range = 180 / pi() * $num /$bz;
         $linR = $range / cos($latitude * pi() / 180);
         $maxLat = round($latitude + $range, 7); //最大纬度
         $minLat = round($latitude - $range, 7); //最小纬度
